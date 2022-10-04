@@ -4,16 +4,16 @@ import 'package:item_variance/models/item_type.dart';
 import 'package:item_variance/providers/itemtype_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:snippet_coder_utils/FormHelper.dart';
-import 'package:snippet_coder_utils/list_helper.dart';
-
-import '../../../services/db_services.dart';
 
 //==========================================================================Global Key for Form State
 GlobalKey<FormState> _gkFormState = GlobalKey<FormState>();
-late DBService dbService;
 
 class AddEditItemType extends StatefulWidget {
-  const AddEditItemType({Key? key}) : super(key: key);
+  const AddEditItemType({Key? key, this.itemTypeModel, this.isEditMode = false})
+      : super(key: key);
+
+  final ItemType? itemTypeModel;
+  final bool isEditMode;
 
   @override
   State<AddEditItemType> createState() => _AddEditItemTypeState();
@@ -23,13 +23,11 @@ class _AddEditItemTypeState extends State<AddEditItemType> {
   @override
   void initState() {
     super.initState();
+  }
 
-    //==========================================================================Call Function to Fetch Report
-    Future.delayed(Duration.zero).then((value) {
-      //==========================================================================Function to Fetch Report
-      Provider.of<ItemTypeProvider>(context, listen: false)
-          .getAllItemTypeProvider();
-    });
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
   }
 
   @override
@@ -37,13 +35,11 @@ class _AddEditItemTypeState extends State<AddEditItemType> {
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.redAccent,
-        title: const Text("Add Item Type"),
+        title: Text(widget.isEditMode ? 'Edit Item Type' : 'Add Item Type'),
       ),
       body: Column(
         children: [
-          Form(key: _gkFormState, child: _addItemType(context)),
-          //====================================================================Item Type List Builder
-          _itemTypeListBuilder(),
+          Form(key: _gkFormState, child: _addItemTypeForm(context)),
         ],
       ),
       //========================================================================Bottom Navigation Buttons
@@ -52,10 +48,10 @@ class _AddEditItemTypeState extends State<AddEditItemType> {
   }
 
   //============================================================================Widget Section for Adding Item Type
-  _addItemType(BuildContext context) {
-    return SingleChildScrollView(
-      child: Consumer<ItemTypeProvider>(
-        builder: (context, provider, child) => Padding(
+  _addItemTypeForm(BuildContext context) {
+    return Consumer<ItemTypeProvider>(
+      builder: (context, provider, child) => SingleChildScrollView(
+        child: Padding(
           padding: const EdgeInsets.all(10.0),
           child: Column(
             children: [
@@ -64,7 +60,9 @@ class _AddEditItemTypeState extends State<AddEditItemType> {
                 "typeName",
                 "Type Name",
                 "",
-                initialValue: provider.itemTypeHolder.typeName ?? "",
+                initialValue: widget.isEditMode
+                    ? widget.itemTypeModel!.typeName.toString()
+                    : "",
                 showPrefixIcon: true,
                 prefixIcon: const Icon(Icons.text_fields),
                 borderRadius: 10,
@@ -107,69 +105,8 @@ class _AddEditItemTypeState extends State<AddEditItemType> {
     return false;
   }
 
-  //============================================================================Item Type List Builder
-  _itemTypeListBuilder() {
-    return Expanded(
-      child: Consumer<ItemTypeProvider>(
-        builder: (context, provider, child) => provider.itemTypeList.isEmpty
-            ? Center(child: Text(Message.nodata))
-            : ListUtils.buildDataTable(
-                context,
-                ["No.", "Item Type", ""],
-                ["id", "typeName", ""],
-                false,
-                0,
-                provider.itemTypeList,
-                headingRowColor: Colors.orangeAccent,
-                isScrollable: true,
-                columnTextFontSize: 15,
-                columnTextBold: false,
-                columnSpacing: 50,
-                onSort: (columnIndex, columnName, asc) {},
-                //==============================================================Edit Option
-                (ItemType itemType) {
-                  //============================================================Edit Item  Type Name
-                  provider.editItemTypeProvider(itemType);
-                },
-                //==============================================================Delete Option
-                (ItemType itemType) {
-                  return showDialog(
-                      context: context,
-                      builder: (BuildContext context) => AlertDialog(
-                            title: Text(Header.confirmDelete),
-                            content: Text(Message.delete),
-                            actions: [
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                crossAxisAlignment: CrossAxisAlignment.center,
-                                children: [
-                                  FormHelper.submitButton(
-                                      ButtonText.delete, () {},
-                                      width: 100,
-                                      borderRadius: 5,
-                                      btnColor: Colors.green,
-                                      borderColor: Colors.green),
-                                  const SizedBox(height: 10),
-                                  FormHelper.submitButton(
-                                    "No",
-                                    () {
-                                      Navigator.of(context).pop();
-                                    },
-                                    width: 100,
-                                    borderRadius: 5,
-                                  )
-                                ],
-                              ),
-                            ],
-                          ));
-                },
-              ),
-      ),
-    );
-  }
-
   //============================================================================Bottom Navigation Buttons
-  _bottomNavigation() {
+  Widget _bottomNavigation() {
     return Consumer<ItemTypeProvider>(
       builder: (context, provider, child) => SizedBox(
         height: 110,
@@ -180,31 +117,31 @@ class _AddEditItemTypeState extends State<AddEditItemType> {
             //==================================================================Save Button
             FormHelper.submitButton(
                 //================================================================Check Edit Mode
-                provider.isEditMode == true
-                    ? ButtonText.update
-                    : ButtonText.save, () {
+                widget.isEditMode ? ButtonText.update : ButtonText.save, () {
               if (validateAndSave()) {
-                if (provider.isEditMode == true) {
+                if (widget.isEditMode == true) {
                   //============================================================Call Provider to Update Item Type
-                  provider.updateItemTypeProvider();
-                  //============================================================Alert After
-                  FormHelper.showSimpleAlertDialog(
-                      context,
-                      Header.updatetemType,
-                      provider.addResult ? Message.success : Message.alertError,
-                      ButtonText.ok, () {
-                    Navigator.pop(context);
+                  provider.updateItemTypeProvider().then((value) {
+                    //============================================================Alert After
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(value == true
+                            ? Message.success
+                            : Message.alertError),
+                      ),
+                    );
                   });
                 } else {
                   //============================================================Call Provider to Save Item Type
-                  provider.addItemTypeProvider();
-                  //============================================================Alert After
-                  FormHelper.showSimpleAlertDialog(
-                      context,
-                      Header.addingItemType,
-                      provider.addResult ? Message.success : Message.alertError,
-                      ButtonText.ok, () {
-                    Navigator.pop(context);
+                  provider.addItemTypeProvider().then((value) {
+                    //============================================================Alert After
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(value == true
+                            ? Message.success
+                            : Message.alertError),
+                      ),
+                    );
                   });
                 }
               }

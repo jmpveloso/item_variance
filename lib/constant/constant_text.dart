@@ -16,7 +16,7 @@ class ButtonText {
 
 //==============================================================================Messages or Display Text
 class Message {
-  static String success = "Data Added Succesfully";
+  static String success = "SUCCESS!";
   static String alertError = "Something went wrong!";
   static String delete = "Do you want to delete this record?";
   static String nodata = "NO DATA RECORD";

@@ -48,4 +48,19 @@ class DBService {
       return false;
     }
   }
+
+  //============================================================================DELETE ITEM TYPE
+  Future<bool> deleteItemTypeDbService(ItemType itemType) async {
+    try {
+      //========================================================================Call Initializer
+      await DBHelper.init();
+
+      //========================================================================Call Delete Method
+      int result = await DBHelper.delete(TableName.itemType, itemType);
+
+      return result > 0 ? true : false;
+    } catch (e) {
+      return false;
+    }
+  }
 }

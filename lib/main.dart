@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:item_variance/presentation/pages/item_type/item_type_view.dart';
 import 'package:item_variance/providers/itemtype_provider.dart';
 import 'package:provider/provider.dart';
-
-import 'presentation/pages/item_type/add_edit_itemtype.dart';
 
 void main() {
   runApp(MultiProvider(
@@ -25,7 +24,7 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
-      home: const AddEditItemType(),
+      home: const ItemTypeView(),
     );
   }
 }
